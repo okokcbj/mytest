@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>曜暖 YAO NUAN | 能量溫罐美學</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        html { scroll-behavior: smooth; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: white; }
+        .shadow-3xl { box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.3); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 內聯圖標組件 (解決 JSX 語法與 Lucide 相容性錯誤) ---
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const icons = {
+                ThermometerSun: <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M15.5 8.5a5 5 0 1 0-7 7l2 2V21h3v-3.5l2-2a5 5 0 0 0 0-7z"/>,
+                Sparkles: (
+                    <>
+                        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                        <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+                        <path d="M16 5l-1.5 2.5L13 5"/><path d="M7 19l-1.5-2.5L4 19"/>
+                    </>
+                ),
+                ArrowRight: <path d="M5 12h14m-7-7 7 7-7 7"/>,
+                Award: (
+                    <>
+                        <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/>
+                        <circle cx="12" cy="8" r="6"/>
+                    </>
+                ),
+                ShieldCheck: (
+                    <>
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                        <path d="m9 12 2 2 4-4"/>
+                    </>
+                ),
+                Sun: (
+                    <>
+                        <circle cx="12" cy="12" r="4"/>
+                        <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                    </>
+                ),
+                Clock: (
+                    <>
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </>
+                ),
+                ShoppingBag: (
+                    <>
+                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                        <path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                    </>
+                ),
+                CheckCircle2: (
+                    <>
+                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                        <path d="m9 12 2 2 4-4"/>
+                    </>
+                ),
+                Coffee: (
+                    <>
+                        <path d="M17 8h1a4 4 0 1 1 0 8h-1"/>
+                        <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+                        <path d="M6 2v2"/><path d="M10 2v2"/><path d="M14 2v2"/>
+                    </>
+                ),
+                MapPin: (
+                    <>
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </>
+                ),
+                MessageCircle: <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>,
+                Menu: (
+                    <>
+                        <line x1="4" x2="20" y1="12" y2="12"/>
+                        <line x1="4" x2="20" y1="6" y2="6"/>
+                        <line x1="4" x2="20" y1="18" y2="18"/>
+                    </>
+                ),
+                X: (
+                    <>
+                        <line x1="18" x2="6" y1="6" y2="18"/>
+                        <line x1="6" x2="18" y1="6" y2="18"/>
+                    </>
+                ),
+                Headphones: (
+                    <>
+                        <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/>
+                        <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3Z"/>
+                    </>
+                ),
+                ClipboardCheck: (
+                    <>
+                        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                        <path d="m9 14 2 2 4-4"/>
+                    </>
+                )
+            };
+            return (
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width={size} 
+                    height={size} 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className={className}
+                >
+                    {icons[name]}
+                </svg>
+            );
+        };
+
+        const App = () => {
+            const [view, setView] = useState('home'); 
+            const [scrolled, setScrolled] = useState(false);
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    setScrolled(window.scrollY > 50);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const navigateTo = (targetView) => {
+                setView(targetView);
+                setMobileMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            // --- 導航欄 ---
+            const Navbar = () => (
+                <nav className={`fixed w-full z-50 transition-all duration-500 ${scrolled || view !== 'home' ? 'bg-stone-900/95 backdrop-blur-md py-4 shadow-2xl' : 'bg-transparent py-8'}`}>
+                    <div className="max-w-7xl mx-auto px-6 md:px-10 flex justify-between items-center">
+                        <div className="flex items-center space-x-3 group cursor-pointer" onClick={() => navigateTo('home')}>
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-500">
+                                <Icon name="ThermometerSun" className="text-white" size={24} />
+                            </div>
+                            <div className="flex flex-col text-left">
+                                <span className="text-xl md:text-2xl font-black tracking-tighter text-white leading-none">曜暖 <span className="text-amber-500 uppercase">Yao Nuan</span></span>
+                                <span className="text-[10px] tracking-[0.4em] text-stone-400 font-medium mt-1 uppercase">能量溫罐美學</span>
+                            </div>
+                        </div>
+                        
+                        <div className="hidden lg:flex space-x-10 text-[13px] font-bold tracking-[0.2em] text-stone-300 uppercase">
+                            <button onClick={() => navigateTo('home')} className={`hover:text-amber-500 transition-colors ${view === 'home' ? 'text-amber-500' : ''}`}>首頁</button>
+                            <button onClick={() => navigateTo('order')} className={`hover:text-amber-500 transition-colors ${view === 'order' ? 'text-amber-500' : ''}`}>服務訂購</button>
+                            <button onClick={() => navigateTo('after-care')} className={`hover:text-amber-500 transition-colors ${view === 'after-care' ? 'text-amber-500' : ''}`}>售後養護</button>
+                            <button onClick={() => navigateTo('consult')} className={`hover:text-amber-500 transition-colors ${view === 'consult' ? 'text-amber-500' : ''}`}>預約諮詢</button>
+                        </div>
+
+                        <div className="flex items-center space-x-4">
+                            <button onClick={() => navigateTo('order')} className="hidden sm:block bg-amber-600 hover:bg-amber-500 text-white px-8 py-2.5 rounded-full text-sm font-black transition-all shadow-xl">立即預約</button>
+                            <button className="lg:hidden text-white p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                                <Icon name={mobileMenuOpen ? "X" : "Menu"} size={28} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {mobileMenuOpen && (
+                        <div className="lg:hidden absolute top-full left-0 w-full bg-stone-900 border-t border-stone-800 p-6 space-y-4 shadow-2xl animate-fade-in">
+                            {['home', 'order', 'after-care', 'consult'].map((item) => (
+                                <button key={item} onClick={() => navigateTo(item)} className={`block w-full text-left font-bold py-3 px-4 rounded-xl hover:bg-stone-800 transition-colors uppercase tracking-widest ${view === item ? 'text-amber-500 bg-stone-800' : 'text-stone-300'}`}>
+                                    {item === 'home' ? '首頁 Home' : item === 'order' ? '服務訂購 Order' : item === 'after-care' ? '售後養護 Service' : '預約諮詢 Consult'}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </nav>
+            );
+
+            const HomeView = () => (
+                <div className="animate-fade-in">
+                    <section className="relative h-screen flex items-center justify-center overflow-hidden bg-stone-950 text-white text-center">
+                        <div className="absolute inset-0">
+                            <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-amber-600/20 rounded-full blur-[180px]"></div>
+                            <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-emerald-800/10 rounded-full blur-[180px]"></div>
+                        </div>
+                        <div className="relative z-10 max-w-5xl px-8">
+                            <div className="inline-flex items-center space-x-3 bg-white/5 border border-white/10 px-8 py-3 rounded-full mb-10 backdrop-blur-md">
+                                <Icon name="Sparkles" className="text-amber-400" size={18} />
+                                <span className="text-xs tracking-[0.4em] font-bold uppercase text-stone-200">每一吋推移，都是對生活的極致熱愛</span>
+                            </div>
+                            <h1 className="text-6xl md:text-9xl font-black mb-8 leading-tight tracking-tighter">
+                                淬煉掌心<br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-500 to-amber-200">重塑生命的韌性。</span>
+                            </h1>
+                            <p className="text-xl md:text-2xl text-stone-400 mb-12 max-w-3xl mx-auto font-light leading-relaxed">
+                                身兼多職的職人精神，將堅毅轉化為最細膩的溫控藝術。<br />
+                                為追求卓越的妳，重塑身體能量平衡。
+                            </p>
+                            <button onClick={() => navigateTo('order')} className="bg-white text-stone-950 px-12 py-5 rounded-2xl text-xl font-black shadow-2xl transition-all hover:bg-amber-500 hover:scale-105 group flex items-center mx-auto">
+                                開啟成癮級體驗 <Icon name="ArrowRight" className="ml-3 group-hover:translate-x-2 transition-transform" />
+                            </button>
+                        </div>
+                    </section>
+
+                    <section className="py-32 bg-white">
+                        <div className="max-w-7xl mx-auto px-10 grid lg:grid-cols-2 gap-20 items-center">
+                            <div className="bg-stone-900 rounded-[60px] p-16 text-center shadow-2xl text-white">
+                                <Icon name="Award" size={64} className="text-amber-500 mx-auto mb-8 animate-pulse" />
+                                <h4 className="text-4xl font-black mb-6 text-white text-center">不妥協的職人目標</h4>
+                                <p className="text-stone-400 text-lg leading-relaxed italic font-light">
+                                    「我看過日出的奔波，也感受過深夜的堅持。因為懂得生活的重，所以我更在乎妳的放鬆。這份溫罐，是我獻給每一位認真生活者的禮物。」
+                                </p>
+                            </div>
+                            <div className="space-y-8 text-left">
+                                <h2 className="text-amber-600 font-black tracking-[0.4em] uppercase text-sm">Professionalism</h2>
+                                <h3 className="text-5xl font-black text-stone-900 leading-tight">積極，是溫暖的源頭。<br />堅持，是品質的保證。</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                    <div className="p-8 bg-stone-50 rounded-[32px] border border-stone-100 group hover:border-amber-500 transition-colors text-left">
+                                        <Icon name="ShieldCheck" className="text-amber-600 mb-4" size={32} />
+                                        <h5 className="font-bold text-lg mb-2">安全純粹</h5>
+                                        <p className="text-stone-500 text-sm">堅持使用最高等級能量陶罐與純淨精油。</p>
+                                    </div>
+                                    <div className="p-8 bg-stone-50 rounded-[32px] border border-stone-100 group hover:border-amber-500 transition-colors text-left">
+                                        <Icon name="Sun" className="text-amber-600 mb-4" size={32} />
+                                        <h5 className="font-bold text-lg mb-2">活力重塑</h5>
+                                        <p className="text-stone-500 text-sm">透過恆溫熱能引導，將疲累轉化為前進動力。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            );
+
+            const OrderView = () => (
+                <div className="animate-fade-in pt-32 bg-stone-50 min-h-screen pb-32">
+                    <div className="max-w-7xl mx-auto px-10">
+                        <div className="text-center mb-20">
+                            <h2 className="text-amber-600 font-black tracking-[0.5em] mb-4 uppercase text-sm text-center">Service Menu</h2>
+                            <h3 className="text-6xl font-black text-stone-900 mb-6 tracking-tighter text-center">精選成癮方案。</h3>
+                            <p className="text-stone-500 text-lg font-light text-center">每一刻的放鬆都極具價值，由職人親自為您調配專屬溫度。</p>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-8">
+                            {[
+                                { title: "核心．覺醒", time: "60min", price: "$1,680", features: ["局部溫罐巡航", "基礎能量平衡", "頭部釋壓按摩"] },
+                                { title: "曜暖．賦活", time: "90min", price: "$2,280", features: ["全身深度溫罐", "特調職人舒壓油", "漢方暖體養生茶"], popular: true },
+                                { title: "極致．能量", time: "120min", price: "$2,980", features: ["頂級修復能量罐", "頭部減壓 SPA", "全身舒活拉伸"] }
+                            ].map((item, i) => (
+                                <div key={i} className={`flex flex-col bg-white rounded-[50px] p-12 border-2 transition-all relative ${item.popular ? 'border-amber-500 shadow-2xl scale-105 z-10' : 'border-transparent shadow-sm hover:shadow-xl'}`}>
+                                    <div className="flex-grow text-left">
+                                        <Icon name="ShoppingBag" className="text-amber-500 mb-6" size={32} />
+                                        <h4 className="text-3xl font-black text-stone-900 mb-2">{item.title}</h4>
+                                        <div className="text-stone-400 font-bold text-sm tracking-widest uppercase mb-6 flex items-center gap-2"><Icon name="Clock" size={16}/>{item.time}</div>
+                                        <div className="text-4xl font-black text-amber-600 mb-8">{item.price}</div>
+                                        <ul className="space-y-4 mb-10">
+                                            {item.features.map((f, fi) => (
+                                                <li key={fi} className="flex items-center text-stone-700 font-medium text-left">
+                                                    <Icon name="CheckCircle2" size={18} className="text-amber-500 mr-3" /> {f}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <button onClick={() => navigateTo('consult')} className={`w-full py-5 rounded-2xl font-black text-lg transition-all ${item.popular ? 'bg-amber-600 text-white shadow-lg' : 'bg-stone-900 text-white'}`}>立即預定</button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const AfterCareView = () => (
+                <div className="animate-fade-in pt-32 bg-white min-h-screen pb-32 text-center">
+                    <div className="max-w-6xl mx-auto px-10">
+                        <div className="text-left max-w-2xl mb-20">
+                            <h2 className="text-amber-600 font-black tracking-[0.5em] mb-4 uppercase text-sm">After-Care</h2>
+                            <h3 className="text-6xl font-black text-stone-900 mb-8 tracking-tighter">完善售後養護。</h3>
+                            <p className="text-stone-500 text-xl font-light leading-relaxed">我們重視每一位客人的術後感受，讓成癮般的輕盈感持續延續。</p>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-8">
+                            {[
+                                { icon: "Coffee", title: "黃金循環補水", desc: "溫罐後兩小時內，請慢飲約 500cc 的溫熱水，加速身體代謝。" },
+                                { icon: "ShieldCheck", title: "恆溫避風守則", desc: "術後三小時內避免吹冷風，讓體內溫暖能量充分沉澱。" },
+                                { icon: "Sun", title: "能量反應觀察", desc: "部分酸脹感為能量激活的正常現象，1-2天後會轉化為極致放鬆。" },
+                                { icon: "Award", title: "規維修養建議", desc: "建議每 14 天進行一次回訪，維持身體最佳能量頻率。" }
+                            ].map((item, i) => (
+                                <div key={i} className="p-10 rounded-[40px] bg-stone-50 border border-stone-100 hover:border-amber-500 transition-all flex gap-8 items-start text-left">
+                                    <div className="bg-stone-900 p-4 rounded-2xl text-amber-500 shadow-lg flex-shrink-0"><Icon name={item.icon} size={24}/></div>
+                                    <div>
+                                        <h4 className="text-2xl font-black text-stone-900 mb-3">{item.title}</h4>
+                                        <p className="text-stone-500 leading-relaxed font-light">{item.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const ConsultView = () => (
+                <div className="animate-fade-in pt-32 bg-stone-950 min-h-screen text-white pb-32 flex items-center">
+                    <div className="max-w-7xl mx-auto px-10 grid lg:grid-cols-2 gap-20 items-center">
+                        <div className="text-left">
+                            <h2 className="text-amber-500 font-bold tracking-[0.5em] mb-4 uppercase text-sm">Consultation</h2>
+                            <h3 className="text-6xl font-black mb-8 tracking-tighter">與職人對話。</h3>
+                            <p className="text-stone-400 text-xl leading-relaxed mb-12 font-light">每一具身體都有其獨特故事，讓我們為您設計最適合的巡航方案。</p>
+                            <div className="space-y-6">
+                                <div className="flex items-center space-x-4"><Icon name="MapPin" className="text-amber-500"/><span className="text-lg">預約後提供詳細地址 (近捷運站)</span></div>
+                                <div className="flex items-center space-x-4"><Icon name="MessageCircle" className="text-amber-500"/><span className="text-lg">Line ID: @yaonuan_spa</span></div>
+                            </div>
+                        </div>
+                        <div className="bg-white/5 backdrop-blur-xl p-12 rounded-[60px] border border-white/10 shadow-3xl text-left">
+                            <form className="space-y-6" onSubmit={e => e.preventDefault()}>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-amber-500">稱呼</label>
+                                    <input type="text" className="w-full bg-white/5 border-b border-white/20 py-4 focus:border-amber-500 outline-none text-lg text-white" placeholder="如何稱呼您？" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-amber-500">聯絡方式</label>
+                                    <input type="text" className="w-full bg-white/5 border-b border-white/20 py-4 focus:border-amber-500 outline-none text-lg text-white" placeholder="手機或 LINE" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-amber-500">諮詢需求</label>
+                                    <textarea className="w-full bg-white/5 border-b border-white/20 py-4 focus:border-amber-500 outline-none text-lg h-32 resize-none text-white" placeholder="想了解什麼呢？" />
+                                </div>
+                                <button className="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 py-5 rounded-2xl font-black text-xl shadow-2xl transition-all">送出預約訊息</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-white font-sans text-stone-900 overflow-x-hidden selection:bg-amber-500 selection:text-white">
+                    <Navbar />
+                    <main className="relative">
+                        {view === 'home' && <HomeView />}
+                        {view === 'order' && <OrderView />}
+                        {view === 'after-care' && <AfterCareView />}
+                        {view === 'consult' && <ConsultView />}
+                    </main>
+                    
+                    <footer className="py-20 bg-stone-950 text-stone-500 border-t border-white/5">
+                        <div className="max-w-7xl mx-auto px-10 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-10">
+                            <div>
+                                <div className="text-2xl font-black text-white mb-2 uppercase tracking-tighter cursor-pointer" onClick={() => navigateTo('home')}>曜暖 YAO NUAN</div>
+                                <p className="text-sm font-light">將認真生活的韌性，化作每一吋掌心的溫度。</p>
+                            </div>
+                            <div className="flex gap-10 text-xs font-bold tracking-widest uppercase">
+                                <button onClick={() => navigateTo('home')} className="hover:text-amber-500 transition-colors">Home</button>
+                                <button onClick={() => navigateTo('order')} className="hover:text-amber-500 transition-colors">Order</button>
+                                <button onClick={() => navigateTo('after-care')} className="hover:text-amber-500 transition-colors">Service</button>
+                            </div>
+                            <p className="text-[10px] opacity-30 font-black tracking-widest uppercase">© 2024 YAO NUAN STUDIO</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
